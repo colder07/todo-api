@@ -1,4 +1,6 @@
 class Api::V1::TodosController < ApplicationController
+  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
+
   def index
     todos = Todo.all
     render json: todos
@@ -37,5 +39,9 @@ class Api::V1::TodosController < ApplicationController
 
   def todo_params
     params.require(:todo).permit(:title, :description, :completed)
+  end
+
+  def record_not_found
+    render json: { error: "Todo not found" }, status: :not_found
   end
 end
