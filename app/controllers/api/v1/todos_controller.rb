@@ -18,6 +18,15 @@ class Api::V1::TodosController < ApplicationController
     end
   end
 
+  def update
+    todo = Todo.find(params[:id])
+    if todo.update(todo_params)
+      render json: todo, status: :ok
+    else
+      render json: todo.errors.full_messages, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def todo_params
