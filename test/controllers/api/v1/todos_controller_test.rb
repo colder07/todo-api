@@ -83,4 +83,22 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_includes body, "Title can't be blank"
     assert_equal todos_count_before, Todo.count
   end
+
+  test "PATCH /api/v1/todos/:id updates a todo" do
+    todo = Todo.create!(
+      title: "Test Todo",
+      description: "This is a test todo",
+      completed: false
+    )
+    patch "/api/v1/todos/#{todo.id}", params: {
+      todo: {
+        title: "Updated title"
+      }
+    }
+    assert_response :ok
+
+    body = JSON.parse(response.body)
+    assert_equal "Updated title", body["title"]
+    assert_equal "Updated title", Todo.find(todo.id).title
+  end
 end
