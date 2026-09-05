@@ -51,4 +51,36 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     body = JSON.parse(response.body)
     assert_equal "Todo not found", body["error"]
   end
+
+  test "POST /api/v1/todos creates a todo" do
+    post "/api/v1/todos", params: {
+      todo: {
+        title: "New Todo",
+        description: "This is a new todo",
+        completed: false
+      }
+    }
+    assert_response :created
+
+    body = JSON.parse(response.body)
+    assert_not_nil body["id"]
+    assert_equal "New Todo", body["title"]
+    assert_equal "This is a new todo", body["description"]
+    assert_equal false, body["completed"]
+
+    assert Todo.exists?(body["id"])
+  end
+
+  test "POST /api/v1/todos returns 422 when title is missing" do
+    todos_count_before = Todo.count
+    post "/api/v1/todos", params: {
+      todo: {
+        title: ""
+      }
+    }
+    assert_response :unprocessable_entity
+    body = JSON.parse(response.body)
+    assert_includes body, "Title can't be blank"
+    assert_equal todos_count_before, Todo.count
+  end
 end
