@@ -101,4 +101,15 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Updated title", body["title"]
     assert_equal "Updated title", Todo.find(todo.id).title
   end
+
+  test "DELETE /api/v1/todos/:id deletes a todo" do
+    todo = Todo.create!(
+      title: "Test Todo",
+      description: "This todo is going to be deleted",
+      completed: false
+    )
+    delete "/api/v1/todos/#{todo.id}"
+    assert_response :no_content
+    assert_equal false, Todo.exists?(todo.id)
+  end
 end
