@@ -17,6 +17,21 @@ class UserTest < ActiveSupport::TestCase
     assert_not duplicate_user.valid?
   end
 
+  test "user password is stored secretly" do
+    user = User.new(email: "test@example.com", password: "password123")
+    assert_not user.password == user.password_digest
+  end
+
+  test "user can authenticate with correct password" do
+    user = User.create!(email: "test@example.com", password: "password123")
+    assert user.authenticate("password123")
+  end
+
+  test "user cannot authenticate with incorrect password" do
+    user = User.create!(email: "test@example.com", password: "password123")
+    assert_not user.authenticate("wrong_password")
+  end
+
   test "user has many todos" do
     user = User.create!(email: "test@example.com", password: "password123")
     user.todos.create!(title: "Todo 1")
