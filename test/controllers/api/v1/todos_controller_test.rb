@@ -5,7 +5,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.create!(
       title: "Test Todo",
       description: "This is a test todo",
-      completed: false
+      completed: false,
+      user: User.create!(email: "test@example.com")
     )
 
     get "/api/v1/todos"
@@ -25,7 +26,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.create!(
       title: "Test Todo",
       description: "This is a test todo",
-      completed: false
+      completed: false,
+      user: User.create!(email: "test@example.com")
     )
 
     get "/api/v1/todos/#{todo.id}"
@@ -41,7 +43,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.create!(
       title: "Test Todo",
       description: "This is a test todo",
-      completed: false
+      completed: false,
+      user: User.create!(email: "test@example.com")
     )
     todo.destroy!
 
@@ -88,7 +91,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.create!(
       title: "Test Todo",
       description: "This is a test todo",
-      completed: false
+      completed: false,
+      user: User.create!(email: "test@example.com")
     )
     patch "/api/v1/todos/#{todo.id}", params: {
       todo: {
@@ -106,7 +110,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     todo = Todo.create!(
       title: "Test Todo",
       description: "This todo is going to be deleted",
-      completed: false
+      completed: false,
+      user: User.create!(email: "test@example.com")
     )
     delete "/api/v1/todos/#{todo.id}"
     assert_response :no_content
