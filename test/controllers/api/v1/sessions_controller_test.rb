@@ -12,6 +12,8 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal user.id, body["id"]
     assert_equal user.email, body["email"]
 
+    assert_not_nil body["token"]
+
     assert_nil body["password"]
     assert_nil body["password_confirmation"]
     assert_nil body["password_digest"]
