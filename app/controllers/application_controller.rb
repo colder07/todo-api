@@ -11,9 +11,14 @@ class ApplicationController < ActionController::API
     token = auth_header.split(" ").last
 
     begin
-      JWT.decode(token, Rails.application.credentials.secret_key_base, true, { algorithm: "HS256" })
+      payload = JWT.decode(token, Rails.application.credentials.secret_key_base, true, { algorithm: "HS256" }).first
+      @current_user = User.find(payload["user_id"])
     rescue
       render json: { error: "Unauthorized" }, status: :unauthorized
     end
+  end
+
+  def current_user
+    @current_user
   end
 end

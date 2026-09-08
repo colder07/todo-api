@@ -14,4 +14,22 @@ class Api::V1::AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  test "GET /api/v1/todos returns todos with a valid token" do
+    user = User.create!(user_params)
+    token = JWT.encode({ user_id: user.id }, Rails.application.credentials.secret_key_base, "HS256")
+
+    get "/api/v1/todos", headers: {
+      Authorization: "Bearer #{token}"
+    }
+    assert_response :ok
+  end
+
+  def user_params
+    {
+      email: "test@example.com",
+      password: "password123",
+      password_confirmation: "password123"
+    }
+  end
 end
