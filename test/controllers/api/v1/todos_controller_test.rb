@@ -6,7 +6,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
       title: "Test Todo",
       description: "This is a test todo",
       completed: false,
-      user: User.create!(email: "test@example.com")
+      user: User.create!(email: "test@example.com", password: "password123")
     )
 
     get "/api/v1/todos"
@@ -27,7 +27,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
       title: "Test Todo",
       description: "This is a test todo",
       completed: false,
-      user: User.create!(email: "test@example.com")
+      user: User.create!(email: "test@example.com", password: "password123")
     )
 
     get "/api/v1/todos/#{todo.id}"
@@ -44,7 +44,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
       title: "Test Todo",
       description: "This is a test todo",
       completed: false,
-      user: User.create!(email: "test@example.com")
+      user: User.create!(email: "test@example.com", password: "password123")
     )
     todo.destroy!
 
@@ -92,7 +92,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
       title: "Test Todo",
       description: "This is a test todo",
       completed: false,
-      user: User.create!(email: "test@example.com")
+      user: User.create!(email: "test@example.com", password: "password123")
     )
     patch "/api/v1/todos/#{todo.id}", params: {
       todo: {
@@ -111,7 +111,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
       title: "Test Todo",
       description: "This todo is going to be deleted",
       completed: false,
-      user: User.create!(email: "test@example.com")
+      user: User.create!(email: "test@example.com", password: "password123")
     )
     delete "/api/v1/todos/#{todo.id}"
     assert_response :no_content
