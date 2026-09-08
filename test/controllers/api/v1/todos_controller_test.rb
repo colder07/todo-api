@@ -2,14 +2,10 @@ require "test_helper"
 
 class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   test "GET /api/v1/todos returns todos" do
-    todo = Todo.create!(
-      title: "Test Todo",
-      description: "This is a test todo",
-      completed: false,
-      user: User.create!(email: "test@example.com", password: "password123")
-    )
+    user = create_user
+    todo = create_todo(user)
 
-    get "/api/v1/todos"
+    get "/api/v1/todos", headers: authenticated_headers(user)
     assert_response :ok
 
     body = JSON.parse(response.body)
@@ -23,14 +19,10 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /api/v1/todos/:id returns a todo" do
-    todo = Todo.create!(
-      title: "Test Todo",
-      description: "This is a test todo",
-      completed: false,
-      user: User.create!(email: "test@example.com", password: "password123")
-    )
+    user = create_user
+    todo = create_todo(user)
 
-    get "/api/v1/todos/#{todo.id}"
+    get "/api/v1/todos/#{todo.id}", headers: authenticated_headers(user)
     assert_response :ok
 
     body = JSON.parse(response.body)
@@ -40,15 +32,11 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /api/v1/todos/:id returns 404 when todo does not exist" do
-    todo = Todo.create!(
-      title: "Test Todo",
-      description: "This is a test todo",
-      completed: false,
-      user: User.create!(email: "test@example.com", password: "password123")
-    )
+    user = create_user
+    todo = create_todo(user)
     todo.destroy!
 
-    get "/api/v1/todos/#{todo.id}"
+    get "/api/v1/todos/#{todo.id}", headers: authenticated_headers(user)
     assert_response :not_found
 
     body = JSON.parse(response.body)
@@ -56,31 +44,31 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "POST /api/v1/todos creates a todo" do
+    user = create_user
     post "/api/v1/todos", params: {
-      todo: {
-        title: "New Todo",
-        description: "This is a new todo",
-        completed: false
-      }
-    }
+      todo: todo_params
+    }, headers: authenticated_headers(user)
+
     assert_response :created
 
     body = JSON.parse(response.body)
-    assert_not_nil body["id"]
-    assert_equal "New Todo", body["title"]
-    assert_equal "This is a new todo", body["description"]
-    assert_equal false, body["completed"]
+    assert_equal todo_params[:title], body["title"]
+    assert_equal todo_params[:description], body["description"]
+    assert_equal todo_params[:completed], body["completed"]
 
-    assert Todo.exists?(body["id"])
+    created_todo = Todo.find(body["id"])
+    assert_equal user.id, created_todo.user_id
   end
 
   test "POST /api/v1/todos returns 422 when title is missing" do
     todos_count_before = Todo.count
+    user = create_user
     post "/api/v1/todos", params: {
       todo: {
         title: ""
       }
-    }
+    }, headers: authenticated_headers(user)
+
     assert_response :unprocessable_entity
     body = JSON.parse(response.body)
     assert_includes body, "Title can't be blank"
@@ -88,17 +76,13 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "PATCH /api/v1/todos/:id updates a todo" do
-    todo = Todo.create!(
-      title: "Test Todo",
-      description: "This is a test todo",
-      completed: false,
-      user: User.create!(email: "test@example.com", password: "password123")
-    )
+    user = create_user
+    todo = create_todo(user)
     patch "/api/v1/todos/#{todo.id}", params: {
       todo: {
         title: "Updated title"
       }
-    }
+    }, headers: authenticated_headers(user)
     assert_response :ok
 
     body = JSON.parse(response.body)
@@ -107,14 +91,34 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "DELETE /api/v1/todos/:id deletes a todo" do
-    todo = Todo.create!(
-      title: "Test Todo",
-      description: "This todo is going to be deleted",
-      completed: false,
-      user: User.create!(email: "test@example.com", password: "password123")
-    )
-    delete "/api/v1/todos/#{todo.id}"
+    user = create_user
+    todo = create_todo(user)
+
+    delete "/api/v1/todos/#{todo.id}", headers: authenticated_headers(user)
     assert_response :no_content
     assert_equal false, Todo.exists?(todo.id)
+  end
+
+  private
+
+  def create_user
+    User.create!(email: "test@example.com", password: "password123", password_confirmation: "password123")
+  end
+
+  def authenticated_headers(user)
+    token = JWT.encode({ user_id: user.id }, Rails.application.credentials.secret_key_base, "HS256")
+    { Authorization: "Bearer #{token}" }
+  end
+
+  def create_todo(user)
+    Todo.create!(todo_params.merge(user: user))
+  end
+
+  def todo_params
+    {
+      title: "Test Todo",
+      description: "This is a test todo",
+      completed: false
+    }
   end
 end
