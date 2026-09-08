@@ -13,7 +13,7 @@ class Api::V1::TodosController < ApplicationController
   end
 
   def create
-    todo = Todo.new(todo_params)
+    todo = Todo.new(todo_params.merge(user: current_user))
     if todo.save
       render json: todo, status: :created
     else
