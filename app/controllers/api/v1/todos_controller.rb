@@ -1,6 +1,5 @@
 class Api::V1::TodosController < ApplicationController
   before_action :authenticate_user!
-  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
   def index
     todos = current_user.todos
@@ -17,7 +16,7 @@ class Api::V1::TodosController < ApplicationController
     if todo.save
       render json: todo, status: :created
     else
-      render json: todo.errors.full_messages, status: :unprocessable_entity
+      render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -26,7 +25,7 @@ class Api::V1::TodosController < ApplicationController
     if todo.update(todo_params)
       render json: todo, status: :ok
     else
-      render json: todo.errors.full_messages, status: :unprocessable_entity
+      render json: { errors: todo.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -40,9 +39,5 @@ class Api::V1::TodosController < ApplicationController
 
   def todo_params
     params.require(:todo).permit(:title, :description, :completed)
-  end
-
-  def record_not_found
-    render json: { error: "Todo not found" }, status: :not_found
   end
 end

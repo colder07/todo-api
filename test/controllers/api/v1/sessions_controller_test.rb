@@ -2,8 +2,8 @@ require "test_helper"
 
 class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
   test "POST /api/v1/login returns a user when credentials are valid" do
-    user = User.create!(user_create_params)
-    post "/api/v1/login", params: { user: user_login_params }
+    user = create_user
+    post "/api/v1/login", params: { user: user_login_params_valid }
 
     assert_response :ok
 
@@ -20,37 +20,44 @@ class Api::V1::SessionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "POST /api/v1/login returns 401 when credentials are invalid" do
-    User.create!(user_create_params)
-    post "/api/v1/login", params: { user: { email: "test@example.com", password: "wrongpassword" } }
+    create_user
+    post "/api/v1/login", params: { user: user_login_params_invalid }
 
     assert_response :unauthorized
 
     body = JSON.parse(response.body)
-    assert_equal "Invalid email or password", body["error"]
+
+    assert_instance_of Array, body["errors"]
+    assert_equal "Invalid email or password", body["errors"][0]
   end
 
   test "POST /api/v1/login returns 401 when user does not exist" do
-    post "/api/v1/login", params: { user: user_login_params }
+    post "/api/v1/login", params: { user: user_login_params_invalid }
 
     assert_response :unauthorized
 
     body = JSON.parse(response.body)
-    assert_equal "Invalid email or password", body["error"]
+    assert_instance_of Array, body["errors"]
+    assert_equal "Invalid email or password", body["errors"][0]
   end
 
   private
-  def user_create_params
-    {
-      email: "test@example.com",
-      password: "password123",
-      password_confirmation: "password123"
-    }
+
+  def create_user(email: "test@example.com", password: "password123", password_confirmation: "password123")
+    User.create!(email: email, password: password, password_confirmation: password_confirmation)
   end
 
-  def user_login_params
+  def user_login_params_valid
     {
       email: "test@example.com",
       password: "password123"
+    }
+  end
+
+  def user_login_params_invalid
+    {
+      email: "test@example.com",
+      password: "wrongpassword"
     }
   end
 end
