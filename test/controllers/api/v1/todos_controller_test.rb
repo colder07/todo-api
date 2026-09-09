@@ -2,20 +2,26 @@ require "test_helper"
 
 class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   test "GET /api/v1/todos returns todos" do
-    user = create_user
-    todo = create_todo(user)
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1, "Test todo A")
+    todoB = create_todo(user1, "Test todo B")
+    todoC = create_todo(user2, "Test todo C")
+    todoD = create_todo(user2, "Test todo D")
 
-    get "/api/v1/todos", headers: authenticated_headers(user)
+    get "/api/v1/todos", headers: authenticated_headers(user1)
     assert_response :ok
 
     body = JSON.parse(response.body)
 
-    returned_todo = body.find do |item|
-      item["id"] == todo.id
-    end
+    assert_equal 2, body.length
 
-    assert_not_nil returned_todo
-    assert_equal todo.title, returned_todo["title"]
+    returned_ids = body.map { |t| t["id"] }.sort
+    expected_ids = [ todoA.id, todoB.id ].sort
+    assert_equal expected_ids, returned_ids
+
+    assert_equal todoA.title, body.find { |t| t["id"] == todoA.id }["title"]
+    assert_equal todoB.title, body.find { |t| t["id"] == todoB.id }["title"]
   end
 
   test "GET /api/v1/todos/:id returns a todo" do
@@ -101,8 +107,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_user
-    User.create!(email: "test@example.com", password: "password123", password_confirmation: "password123")
+  def create_user(email = "test@example.com", password = "password123", password_confirmation = "password123")
+    User.create!(email: email, password: password, password_confirmation: password_confirmation)
   end
 
   def authenticated_headers(user)
@@ -110,15 +116,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     { Authorization: "Bearer #{token}" }
   end
 
-  def create_todo(user)
-    Todo.create!(todo_params.merge(user: user))
-  end
-
-  def todo_params
-    {
-      title: "Test Todo",
-      description: "This is a test todo",
-      completed: false
-    }
+  def create_todo(user, title = "Test todo", description = "This is a test todo", completed = false)
+    Todo.create!(user: user, title: title, description: description, completed: completed)
   end
 end

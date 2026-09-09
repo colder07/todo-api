@@ -3,7 +3,7 @@ class Api::V1::TodosController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
   def index
-    todos = Todo.all
+    todos = current_user.todos
     render json: todos
   end
 
