@@ -58,15 +58,19 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   test "POST /api/v1/todos creates a todo" do
     user = create_user
     post "/api/v1/todos", params: {
-      todo: todo_params
+      todo: {
+        title: "Test todo",
+        description: "This is a test todo",
+        completed: false
+      }
     }, headers: authenticated_headers(user)
 
     assert_response :created
 
     body = JSON.parse(response.body)
-    assert_equal todo_params[:title], body["title"]
-    assert_equal todo_params[:description], body["description"]
-    assert_equal todo_params[:completed], body["completed"]
+    assert_equal "Test todo", body["title"]
+    assert_equal "This is a test todo", body["description"]
+    assert_equal false, body["completed"]
 
     created_todo = Todo.find(body["id"])
     assert_equal user.id, created_todo.user_id
@@ -88,18 +92,35 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "PATCH /api/v1/todos/:id updates a todo" do
-    user = create_user
-    todo = create_todo(user)
-    patch "/api/v1/todos/#{todo.id}", params: {
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1)
+    todoB = create_todo(user2, "Test todo B")
+
+    patch "/api/v1/todos/#{todoA.id}", params: {
       todo: {
         title: "Updated title"
       }
-    }, headers: authenticated_headers(user)
+    }, headers: authenticated_headers(user1)
+
     assert_response :ok
 
     body = JSON.parse(response.body)
     assert_equal "Updated title", body["title"]
-    assert_equal "Updated title", Todo.find(todo.id).title
+    assert_equal todoA.id, body["id"]
+    assert_equal user1.id, body["user_id"]
+
+    patch "/api/v1/todos/#{todoB.id}", params: {
+      todo: {
+        title: "Updated title"
+      }
+    }, headers: authenticated_headers(user1)
+
+    assert_response :not_found
+
+    body = JSON.parse(response.body)
+    assert_equal "Todo not found", body["error"]
+    assert_equal "Test todo B", Todo.find(todoB.id).title
   end
 
   test "DELETE /api/v1/todos/:id deletes a todo" do

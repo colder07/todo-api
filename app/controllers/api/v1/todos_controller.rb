@@ -22,7 +22,7 @@ class Api::V1::TodosController < ApplicationController
   end
 
   def update
-    todo = Todo.find(params[:id])
+    todo = current_user.todos.find(params[:id])
     if todo.update(todo_params)
       render json: todo, status: :ok
     else
