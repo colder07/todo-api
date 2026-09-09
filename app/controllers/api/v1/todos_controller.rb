@@ -8,7 +8,7 @@ class Api::V1::TodosController < ApplicationController
   end
 
   def show
-    todo = Todo.find(params[:id])
+    todo = current_user.todos.find(params[:id])
     render json: todo
   end
 

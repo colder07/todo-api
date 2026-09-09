@@ -25,16 +25,22 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /api/v1/todos/:id returns a todo" do
-    user = create_user
-    todo = create_todo(user)
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1, "Test todo A")
+    todoB = create_todo(user2, "Test todo B")
 
-    get "/api/v1/todos/#{todo.id}", headers: authenticated_headers(user)
+    get "/api/v1/todos/#{todoA.id}", headers: authenticated_headers(user1)
     assert_response :ok
 
     body = JSON.parse(response.body)
+    assert_equal todoA.id, body["id"]
 
-    assert_equal todo.id, body["id"]
-    assert_equal todo.title, body["title"]
+    get "/api/v1/todos/#{todoB.id}", headers: authenticated_headers(user1)
+    assert_response :not_found
+
+    body = JSON.parse(response.body)
+    assert_equal "Todo not found", body["error"]
   end
 
   test "GET /api/v1/todos/:id returns 404 when todo does not exist" do
