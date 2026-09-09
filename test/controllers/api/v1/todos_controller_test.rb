@@ -1,6 +1,7 @@
 require "test_helper"
 
 class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
+  # GET /todos
   test "GET /api/v1/todos returns todos" do
     user1 = create_user
     user2 = create_user("test2@example.com")
@@ -24,6 +25,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal todoB.title, body.find { |t| t["id"] == todoB.id }["title"]
   end
 
+  # GET /todos/:id
   test "GET /api/v1/todos/:id returns a todo" do
     user1 = create_user
     user2 = create_user("test2@example.com")
@@ -55,6 +57,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Todo not found", body["error"]
   end
 
+  # POST /todos
   test "POST /api/v1/todos creates a todo" do
     user = create_user
     post "/api/v1/todos", params: {
@@ -91,6 +94,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal todos_count_before, Todo.count
   end
 
+  # PATCH /todos/:id
   test "PATCH /api/v1/todos/:id updates a todo" do
     user1 = create_user
     user2 = create_user("test2@example.com")
@@ -123,6 +127,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Test todo B", Todo.find(todoB.id).title
   end
 
+  # DELETE /todos/:id
   test "DELETE /api/v1/todos/:id deletes a todo" do
     user1 = create_user
     user2 = create_user("test2@example.com")
@@ -139,7 +144,7 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
-
+  # Helper methods
   def create_user(email = "test@example.com", password = "password123", password_confirmation = "password123")
     User.create!(email: email, password: password, password_confirmation: password_confirmation)
   end
