@@ -31,7 +31,7 @@ class Api::V1::TodosController < ApplicationController
   end
 
   def destroy
-    todo = Todo.find(params[:id])
+    todo = current_user.todos.find(params[:id])
     todo.destroy
     head :no_content
   end

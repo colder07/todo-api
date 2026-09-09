@@ -124,12 +124,18 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "DELETE /api/v1/todos/:id deletes a todo" do
-    user = create_user
-    todo = create_todo(user)
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1)
+    todoB = create_todo(user2, "Test todo B")
 
-    delete "/api/v1/todos/#{todo.id}", headers: authenticated_headers(user)
+    delete "/api/v1/todos/#{todoA.id}", headers: authenticated_headers(user1)
     assert_response :no_content
-    assert_equal false, Todo.exists?(todo.id)
+    assert_equal false, Todo.exists?(todoA.id)
+
+    delete "/api/v1/todos/#{todoB.id}", headers: authenticated_headers(user1)
+    assert_response :not_found
+    assert true, Todo.exists?(todoB.id)
   end
 
   private
