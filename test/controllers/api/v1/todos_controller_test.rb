@@ -37,12 +37,20 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
 
     body = JSON.parse(response.body)
     assert_equal todoA.id, body["id"]
+  end
+
+  test "GET /api/v1/todos/:id returns 404 when todo belongs to another user" do
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1, "Test todo A")
+    todoB = create_todo(user2, "Test todo B")
 
     get "/api/v1/todos/#{todoB.id}", headers: authenticated_headers(user1)
     assert_response :not_found
 
     body = JSON.parse(response.body)
-    assert_equal "Todo not found", body["error"]
+    assert_instance_of Array, body["errors"]
+    assert_not_empty body["errors"]
   end
 
   test "GET /api/v1/todos/:id returns 404 when todo does not exist" do
@@ -54,7 +62,8 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
 
     body = JSON.parse(response.body)
-    assert_equal "Todo not found", body["error"]
+    assert_instance_of Array, body["errors"]
+    assert_not_empty body["errors"]
   end
 
   # POST /todos
@@ -79,6 +88,19 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal user.id, created_todo.user_id
   end
 
+  test "POST /api/v1/todos returns 400 when todo params are missing" do
+    todos_count_before = Todo.count
+    user = create_user
+    post "/api/v1/todos", params: {}, headers: authenticated_headers(user)
+
+    assert_response :bad_request
+    body = JSON.parse(response.body)
+
+    assert_instance_of Array, body["errors"]
+    assert_not_empty body["errors"]
+    assert_equal todos_count_before, Todo.count
+  end
+
   test "POST /api/v1/todos returns 422 when title is missing" do
     todos_count_before = Todo.count
     user = create_user
@@ -90,16 +112,16 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     body = JSON.parse(response.body)
-    assert_includes body, "Title can't be blank"
+
+    assert_instance_of Array, body["errors"]
+    assert_equal "Title can't be blank", body["errors"][0]
     assert_equal todos_count_before, Todo.count
   end
 
   # PATCH /todos/:id
   test "PATCH /api/v1/todos/:id updates a todo" do
     user1 = create_user
-    user2 = create_user("test2@example.com")
     todoA = create_todo(user1)
-    todoB = create_todo(user2, "Test todo B")
 
     patch "/api/v1/todos/#{todoA.id}", params: {
       todo: {
@@ -113,6 +135,13 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Updated title", body["title"]
     assert_equal todoA.id, body["id"]
     assert_equal user1.id, body["user_id"]
+  end
+
+  test "PATCH /api/v1/todos/:id returns 404 when todo belongs to another user" do
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1)
+    todoB = create_todo(user2, "Test todo B")
 
     patch "/api/v1/todos/#{todoB.id}", params: {
       todo: {
@@ -123,24 +152,36 @@ class Api::V1::TodosControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
 
     body = JSON.parse(response.body)
-    assert_equal "Todo not found", body["error"]
+
+    assert_instance_of Array, body["errors"]
+    assert_not_empty body["errors"]
     assert_equal "Test todo B", Todo.find(todoB.id).title
   end
 
   # DELETE /todos/:id
   test "DELETE /api/v1/todos/:id deletes a todo" do
     user1 = create_user
-    user2 = create_user("test2@example.com")
     todoA = create_todo(user1)
-    todoB = create_todo(user2, "Test todo B")
 
     delete "/api/v1/todos/#{todoA.id}", headers: authenticated_headers(user1)
     assert_response :no_content
     assert_equal false, Todo.exists?(todoA.id)
+  end
+
+  test "DELETE /api/v1/todos/:id returns 404 when todo belongs to another user" do
+    user1 = create_user
+    user2 = create_user("test2@example.com")
+    todoA = create_todo(user1)
+    todoB = create_todo(user2, "Test todo B")
 
     delete "/api/v1/todos/#{todoB.id}", headers: authenticated_headers(user1)
     assert_response :not_found
-    assert true, Todo.exists?(todoB.id)
+
+    body = JSON.parse(response.body)
+
+    assert_instance_of Array, body["errors"]
+    assert_not_empty body["errors"]
+    assert_equal true, Todo.exists?(todoB.id)
   end
 
   private

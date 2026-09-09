@@ -5,6 +5,11 @@ class Api::V1::AuthenticationTest < ActionDispatch::IntegrationTest
     get "/api/v1/todos"
 
     assert_response :unauthorized
+
+    body = JSON.parse(response.body)
+
+    assert_instance_of Array, body["errors"]
+    assert_equal "Unauthorized", body["errors"][0]
   end
 
   test "GET /api/v1/todos returns 401 with an invalid token" do
@@ -13,6 +18,11 @@ class Api::V1::AuthenticationTest < ActionDispatch::IntegrationTest
     }
 
     assert_response :unauthorized
+
+    body = JSON.parse(response.body)
+
+    assert_instance_of Array, body["errors"]
+    assert_equal "Unauthorized", body["errors"][0]
   end
 
   test "GET /api/v1/todos returns todos with a valid token" do
