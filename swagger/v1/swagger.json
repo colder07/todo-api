@@ -1,0 +1,622 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Todo API",
+    "description": "A Todo management API built for learning Rails. Supports user registration, authentication, and full CRUD operations for todo items.",
+    "contact": {
+      "name": "API Support"
+    },
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints (register, login)"
+    },
+    {
+      "name": "Todos",
+      "description": "Todo management endpoints (JWT authentication required)"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserWithToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "token": {
+            "type": "string",
+            "description": "JWT Token to be used in subsequent requests via the Authorization header as: Bearer {token}",
+            "example": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxfQ.example"
+          }
+        }
+      },
+      "Todo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Learn Rails"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Finish the Todo API project"
+          },
+          "completed": {
+            "type": "boolean",
+            "example": false
+          },
+          "user_id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["Unauthorized"]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Obtain a JWT Token from the login endpoint. Format: Bearer {token}"
+      }
+    },
+    "parameters": {
+      "TodoId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "description": "The ID of the Todo"
+      }
+    },
+    "requestBodies": {
+      "UserCreate": {
+        "description": "User registration parameters",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["user"],
+              "properties": {
+                "user": {
+                  "type": "object",
+                  "required": ["email", "password", "password_confirmation"],
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "example": "newuser@example.com"
+                    },
+                    "password": {
+                      "type": "string",
+                      "format": "password",
+                      "example": "password123",
+                      "minLength": 1
+                    },
+                    "password_confirmation": {
+                      "type": "string",
+                      "format": "password",
+                      "example": "password123",
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "UserLogin": {
+        "description": "User login parameters",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["user"],
+              "properties": {
+                "user": {
+                  "type": "object",
+                  "required": ["email", "password"],
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "example": "user@example.com"
+                    },
+                    "password": {
+                      "type": "string",
+                      "format": "password",
+                      "example": "password123"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TodoCreate": {
+        "description": "Todo creation parameters",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["todo"],
+              "properties": {
+                "todo": {
+                  "type": "object",
+                  "required": ["title"],
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "example": "New todo item"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "Detailed description",
+                      "nullable": true
+                    },
+                    "completed": {
+                      "type": "boolean",
+                      "example": false,
+                      "default": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TodoUpdate": {
+        "description": "Todo update parameters (all fields are optional)",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["todo"],
+              "properties": {
+                "todo": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "example": "Updated title"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "Updated description",
+                      "nullable": true
+                    },
+                    "completed": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [],
+  "paths": {
+    "/api/v1/users": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "description": "Creates a new user account. Returns user info (without password) on success. You need to call the login endpoint separately to obtain a JWT Token.",
+        "operationId": "registerUser",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UserCreate"
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed (e.g. duplicate email, password mismatch)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "errors": [
+                    "Email has already been taken",
+                    "Password confirmation doesn't match Password"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing user parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User login",
+        "description": "Authenticates a user with email and password. Returns user info along with a JWT Token. The token must be sent in the Authorization header of subsequent authenticated requests using the format `Bearer {token}`.",
+        "operationId": "loginUser",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UserLogin"
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserWithToken"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "errors": ["Invalid email or password"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/todos": {
+      "get": {
+        "tags": ["Todos"],
+        "summary": "List all todos",
+        "description": "Returns all todos belonging to the currently authenticated user. Each user can only see their own todos.",
+        "operationId": "listTodos",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned todo list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Todo"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (missing or invalid token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "errors": ["Unauthorized"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Todos"],
+        "summary": "Create a todo",
+        "description": "Creates a new todo for the currently authenticated user. The title field is required.",
+        "operationId": "createTodo",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TodoCreate"
+        },
+        "responses": {
+          "201": {
+            "description": "Creation successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Todo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed (e.g. missing title)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "errors": ["Title can't be blank"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing todo parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/todos/{id}": {
+      "get": {
+        "tags": ["Todos"],
+        "summary": "Get a single todo",
+        "description": "Retrieves detailed information for a specific todo by ID. Users can only access their own todos; accessing another user's todo returns 404.",
+        "operationId": "getTodo",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully returned todo details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Todo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo not found or does not belong to the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "errors": [
+                    "Couldn't find Todo with 'id'=999 [WHERE \"todos\".\"user_id\" = $1]"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Todos"],
+        "summary": "Update a todo",
+        "description": "Updates fields for the specified todo (partial update — all fields optional). Users can only update their own todos.",
+        "operationId": "updateTodo",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TodoUpdate"
+        },
+        "responses": {
+          "200": {
+            "description": "Update successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Todo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Todo not found or does not belong to the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Todos"],
+        "summary": "Delete a todo",
+        "description": "Deletes the specified todo. Users can only delete their own todos.",
+        "operationId": "deleteTodo",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deletion successful (no content returned)"
+          },
+          "404": {
+            "description": "Todo not found or does not belong to the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
